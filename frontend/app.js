@@ -314,7 +314,10 @@ map.on('click', async (e) => {
         if (data.status === "success") {
             let popupHtml = `<div class="min-w-[200px]">
                 <h4 class="font-bold text-green-700 border-b pb-1 mb-2">Informasi Lahan Terpilih</h4>
-                <div class="text-xs space-y-2">`;
+                <div class="text-xs space-y-2">
+                <div class="mb-2 pb-1 border-b border-gray-100 text-gray-500 font-mono text-[10px] flex items-center justify-between">
+                    <span><i class="fa-solid fa-location-dot mr-1 text-red-500"></i> ${lat.toFixed(5)}, ${lon.toFixed(5)}</span>
+                </div>`;
             
             // Administrasi
             const admin = data.data.administrasi_wilayah;
