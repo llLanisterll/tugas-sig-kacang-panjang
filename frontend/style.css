@@ -1,0 +1,75 @@
+/* Custom styles for Leaflet elements and general layout */
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c1c1c1; 
+    border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8; 
+}
+
+/* Leaflet Popup Styling */
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.leaflet-popup-content {
+    margin: 14px 16px;
+    line-height: 1.5;
+}
+.leaflet-popup-tip-container {
+    margin-top: -1px;
+}
+
+/* Custom Checkbox for Layer Toggle */
+.layer-checkbox {
+    width: 1rem;
+    height: 1rem;
+    color: #15803d; /* green-700 */
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease-in-out;
+}
+.layer-checkbox:focus {
+    --tw-ring-color: #22c55e;
+}
+
+/* Legend Box styling */
+.legend-color-box {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+/* Fade animation for loading overlay */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out forwards;
+}
+.fade-out {
+    animation: fadeOut 0.3s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; visibility: hidden; }
+    to { opacity: 1; visibility: visible; }
+}
+@keyframes fadeOut {
+    from { opacity: 1; visibility: visible; }
+    to { opacity: 0; visibility: hidden; }
+}

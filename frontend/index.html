@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web GIS Kesesuaian Lahan Kacang Panjang</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Leaflet Draw CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0,0,0,0.02);
+        }
+        /* Custom Checkbox Animation */
+        .premium-checkbox {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .premium-checkbox:hover {
+            transform: scale(1.1);
+        }
+        .layer-group {
+            transition: background-color 0.2s ease;
+        }
+        .layer-group:hover {
+            background-color: rgba(243, 244, 246, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col h-screen overflow-hidden text-gray-800 antialiased selection:bg-emerald-200">
+
+    <main class="h-screen w-screen relative overflow-hidden">
+        
+        <!-- Map Container -->
+        <div id="map" class="absolute inset-0 z-0 bg-gray-50"></div>
+        
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="absolute inset-0 bg-white/60 backdrop-blur-sm z-[2000] flex flex-col items-center justify-center hidden transition-opacity duration-300">
+            <div class="relative">
+                <div class="w-16 h-16 border-4 border-emerald-200 rounded-full"></div>
+                <div class="w-16 h-16 border-4 border-emerald-600 rounded-full animate-spin absolute top-0 left-0 border-t-transparent"></div>
+            </div>
+            <p class="text-gray-800 font-semibold mt-4 tracking-wide text-sm bg-white/80 px-4 py-2 rounded-full shadow-sm">Memuat Data Spasial...</p>
+        </div>
+
+        <!-- Floating Premium Sidebar -->
+        <aside id="floating-sidebar" class="absolute top-6 left-6 w-[360px] max-h-[calc(100vh-3rem)] glass-panel rounded-2xl z-[1000] flex flex-col overflow-hidden shadow-2xl">
+            
+            <!-- Header (Drag Handle) -->
+            <div id="sidebar-header" class="p-5 bg-gradient-to-r from-emerald-600 to-teal-500 text-white relative overflow-hidden cursor-move">
+                <div class="absolute top-[-20px] right-[-20px] w-24 h-24 bg-white opacity-10 rounded-full blur-2xl"></div>
+                <h1 class="text-xl font-bold tracking-tight drop-shadow-sm flex items-center">
+                    <i class="fa-solid fa-layer-group mr-2.5 text-emerald-100"></i> SIG Analisis Lahan
+                </h1>
+                <p class="text-xs text-emerald-50 font-medium mt-1.5 opacity-90 tracking-wide uppercase">Kacang Panjang • Kab. Soppeng</p>
+            </div>
+            
+            <!-- Controls -->
+            <div class="p-5 overflow-y-auto custom-scrollbar flex-1">
+                
+                <!-- Dashboard Button -->
+                <button id="btn-show-dashboard" class="w-full mb-6 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-md transition-all duration-300 flex items-center justify-center group">
+                    <i class="fa-solid fa-chart-pie mr-2 group-hover:scale-110 transition-transform"></i> Dashboard Statistik Area
+                </button>
+
+                <div class="mb-7">
+                    <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-2">Data Geospasial Dasar</h3>
+                    <div class="space-y-1" id="layer-toggles">
+                        <!-- Loading Skeleton -->
+                        <div class="animate-pulse flex space-x-3 items-center px-2 py-2">
+                            <div class="h-5 w-5 bg-gray-200 rounded"></div>
+                            <div class="h-4 w-32 bg-gray-200 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-2">Keluaran Analisis</h3>
+                    <div class="space-y-1">
+                        <label class="flex items-start cursor-pointer group layer-group px-2 py-2.5 rounded-lg">
+                            <div class="flex items-center h-5 mt-0.5">
+                                <input type="checkbox" id="layer-rec-non-agri" class="premium-checkbox w-4 h-4 text-blue-500 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <span class="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">Rekomendasi Non-Pertanian</span>
+                                <p class="text-[11px] text-gray-500 font-medium mt-1 leading-snug">Lahan Sesuai (S1-S3) tapi saat ini bukan di Zona Pertanian</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start cursor-pointer group layer-group px-2 py-2.5 rounded-lg">
+                            <div class="flex items-center h-5 mt-0.5">
+                                <input type="checkbox" id="layer-best-loc" class="premium-checkbox w-4 h-4 text-purple-600 bg-white border-gray-300 rounded focus:ring-purple-500 focus:ring-2">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <span class="font-semibold text-gray-800 group-hover:text-purple-600 transition-colors">Rekomendasi Lahan Terbaik</span>
+                                <p class="text-[11px] text-gray-500 font-medium mt-1 leading-snug">Memenuhi 4 Kriteria (Sesuai, Hujan, Lereng, Pola Ruang)</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+        </aside>
+
+        <!-- Dashboard Modal -->
+        <div id="dashboard-modal" class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm z-[3000] hidden flex items-center justify-center transition-opacity">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center"><i class="fa-solid fa-chart-bar text-emerald-600 mr-2"></i> Statistik Kesesuaian Lahan</h3>
+                    <button id="btn-close-dashboard" class="text-gray-400 hover:text-gray-700 transition-colors"><i class="fa-solid fa-times text-xl"></i></button>
+                </div>
+                <div class="p-6 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
+                    <p class="text-sm text-gray-500 mb-6 text-center">Menampilkan total persentase luas lahan berdasarkan kelas kesesuaian untuk budidaya kacang panjang di seluruh Kabupaten Soppeng.</p>
+                    <div class="w-full max-w-md relative">
+                        <canvas id="suitabilityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet Draw JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Custom Script -->
+    <script src="app.js"></script>
+</body>
+</html>
