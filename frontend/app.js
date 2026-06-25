@@ -2,7 +2,7 @@ const API_BASE = "http://localhost:8000";
 
 // --- MAP INITIALIZATION ---
 // Center at Soppeng Regency
-const map = L.map('map').setView([-4.356, 119.882], 12);
+const map = L.map('map').setView([-4.440, 119.695], 11);
 
 // Add OpenStreetMap Basemap
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
