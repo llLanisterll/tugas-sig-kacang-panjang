@@ -18,6 +18,24 @@ const layerTogglesContainer = document.getElementById('layer-toggles');
 const loadingOverlay = document.getElementById('loading-overlay');
 
 // --- HELPER FUNCTIONS ---
+
+// Decode array biner [S1, S2, S3, N] menjadi teks yang terbaca
+const decodeBinaryArray = (val) => {
+    let arr = val;
+    // Jika string seperti "{0,0,1,1}" atau "[0,0,1,1]", parse dulu
+    if (typeof val === 'string') {
+        const cleaned = val.replace(/[{}\[\]\s]/g, '');
+        arr = cleaned.split(',').map(Number);
+        if (arr.some(isNaN)) return val; // bukan array angka, kembalikan apa adanya
+    }
+    if (!Array.isArray(arr)) return val;
+    const classes = ['S1', 'S2', 'S3', 'N'];
+    const result = arr
+        .map((v, i) => (v === 1 && classes[i]) ? classes[i] : null)
+        .filter(Boolean);
+    return result.length > 0 ? result.join(', ') : 'Tidak ada';
+};
+
 const showLoading = () => {
     loadingOverlay.classList.remove('hidden');
     loadingOverlay.classList.remove('fade-out');
@@ -157,11 +175,38 @@ async function handleLayerToggle(e) {
                 const leafletLayer = L.geoJSON(geojson, {
                     style: (feature) => getLayerStyle(layerName, feature),
                     onEachFeature: (feature, layer) => {
-                        // Create basic popup for hover or generic clicks if needed
-                        let popupContent = `<div class="font-bold border-b pb-1 mb-2">${layerName.toUpperCase()}</div>`;
-                        for (let key in feature.properties) {
-                            if (key !== 'wkb_geometry') {
-                                popupContent += `<div class="text-xs"><b>${key}:</b> ${feature.properties[key]}</div>`;
+                        let popupContent = '';
+
+                        if (layerName === 'kesesuaian_lahan') {
+                            // Popup khusus untuk kesesuaian lahan — hanya tampil field penting
+                            const p = feature.properties;
+                            const suai = p.suai_lahan || p.SUAI_LAHAN || '-';
+                            const pembatas = p.pembatas || p.PEMBATAS || '-';
+                            const luas = p.luas ? parseFloat(p.luas).toFixed(2) : '-';
+                            const isSesuai = ['S1','S2','S3'].includes(suai);
+                            const badgeColor = suai === 'N' ? 'background:#fee2e2;color:#991b1b' 
+                                : (suai !== '-' ? 'background:#dcfce7;color:#166534' : 'background:#f3f4f6;color:#6b7280');
+                            popupContent = `
+                                <div style="min-width:180px">
+                                    <div style="font-weight:bold;border-bottom:1px solid #e5e7eb;padding-bottom:6px;margin-bottom:8px">
+                                        🗺️ Kesesuaian Lahan
+                                    </div>
+                                    <div style="font-size:12px;line-height:1.8">
+                                        <div><b>Kelas:</b> <span style="padding:2px 8px;border-radius:4px;font-weight:bold;${badgeColor}">${suai}</span></div>
+                                        <div><b>Pembatas:</b> ${pembatas}</div>
+                                        <div><b>Luas:</b> ${luas} Ha</div>
+                                    </div>
+                                </div>`;
+                        } else {
+                            // Popup generik: tampilkan semua field yang TIDAK null
+                            popupContent = `<div class="font-bold border-b pb-1 mb-2">${layerName.toUpperCase()}</div>`;
+                            for (let key in feature.properties) {
+                                const raw = feature.properties[key];
+                                if (key === 'wkb_geometry') continue;
+                                if (raw === null || raw === undefined) continue; // skip null
+                                if (Array.isArray(raw)) continue; // skip array biner
+                                if (typeof raw === 'string' && raw.startsWith('[') && raw.endsWith(']')) continue;
+                                popupContent += `<div class="text-xs"><b>${key}:</b> ${raw}</div>`;
                             }
                         }
                         layer.bindPopup(popupContent);
